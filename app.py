@@ -1,43 +1,17 @@
-import os
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from fpdf import FPDF
+import os
 from dotenv import load_dotenv
 import google.generativeai as genai
-from langchain.prompts import PromptTemplate
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 app = Flask(__name__)
+CORS(app)
 
 model = genai.GenerativeModel("gemini-pro")
-
-def build_prompt(data):
-    return f"""
-You are a professional resume writer.
-
-Create a resume with:
-Name: {data['name']}
-Role: {data['role']}
-Experience: {data['experience']}
-Skills: {', '.join(data['skills'])}
-Education: {data['education']}
-
-Format: Name → Summary → Skills (bullet) → Experience → Education
-"""
-
-def build_feedback_prompt(data):
-    return f"""
-You are a resume coach.
-
-Give 3 improvement suggestions for the following details:
-
-Name: {data['name']}
-Role: {data['role']}
-Experience: {data['experience']}
-Skills: {data['skills']}
-Education: {data['education']}
-"""
 
 class ResumePDF:
     def __init__(self, text):
@@ -52,14 +26,62 @@ class ResumePDF:
         pdf.output(filename)
         return filename
 
+def build_prompt(data):
+    skills = data["skills"]
+    if isinstance(skills, str):
+        skills = [s.strip() for s in skills.split(",")]
+
+    return f"""
+You are a professional resume writer.
+
+Create a detailed resume using the following:
+
+Name: {data['name']}
+Role: {data['role']}
+Experience: {data['experience']}
+Skills: {', '.join(skills)}
+Education: {data['education']}
+College Percentage: {data['college']}
+School Percentage: {data['school']}
+Competitive Programming: {data['competitiveProgramming']}
+Problem Solving: {data['problemSolving']}
+
+Format: 
+Name
+→ Summary  
+→ Skills (bullet points)  
+→ Experience  
+→ Education  
+→ College Percentage  
+→ School Percentage  
+→ Competitive Programming (bullet points)  
+→ Problem Solving Stats (bullet points)
+"""
+
+def build_feedback_prompt(data):
+    return f"""
+You are a resume coach.
+
+Give 3 improvement suggestions for the following resume draft:
+
+Name: {data['name']}
+Role: {data['role']}
+Experience: {data['experience']}
+Skills: {data['skills']}
+Education: {data['education']}
+College Percentage: {data['college']}
+School Percentage: {data['school']}
+Competitive Programming: {data['competitiveProgramming']}
+Problem Solving: {data['problemSolving']}
+"""
+
 @app.route("/generate-resume", methods=["POST"])
 def generate_resume():
     try:
         data = request.get_json()
         prompt = build_prompt(data)
         response = model.generate_content(prompt)
-        resume_text = response.text
-
+        resume_text = getattr(response, "text", "Error: No response text.")
         ResumePDF(resume_text).generate("resume.pdf")
         return jsonify({"text": resume_text})
     except Exception as e:
@@ -71,7 +93,7 @@ def get_suggestions():
         data = request.get_json()
         feedback_prompt = build_feedback_prompt(data)
         response = model.generate_content(feedback_prompt)
-        return jsonify({"suggestion": response.text})
+        return jsonify({"suggestion": getattr(response, "text", "No suggestions returned.")})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -84,3 +106,4 @@ def download_resume():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
