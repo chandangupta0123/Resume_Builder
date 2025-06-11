@@ -1,17 +1,20 @@
-# Resume Builder
+# 🧠 AI-Powered Resume Builder
 
-A sleek and customizable web application to generate professional resumes.
+An end-to-end resume builder using Google Gemini + React + Flask. Generate structured, professional resumes with AI-powered suggestions.
 
-## Features
-- Dynamic resume templates
-- Export as PDF
-- Clean and responsive UI
+## 🌟 Features
 
-## Tech Stack
-- HTML/CSS/JavaScript (or React/Django/etc.)
+- ✍️ Section-wise resume builder (Education, Skills, CP, Projects, etc.)
+- 🤖 Gemini AI-powered suggestions per section
+- 📄 PDF export using FPDF
+- 🔄 React + Flask full-stack integration
 
-## How to Run
+## 🔧 Installation
+
+### Backend Setup
 ```bash
-# If React or Node
-npm install
-npm start
+cd backend
+pip install -r requirements.txt
+cp .env.example .env
+# Put your GOOGLE_API_KEY in .env
+python app.py
