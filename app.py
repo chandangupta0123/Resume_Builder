@@ -13,6 +13,7 @@ CORS(app)
 
 model = genai.GenerativeModel("gemini-pro")
 
+
 class ResumePDF:
     def __init__(self, text):
         self.text = text
@@ -26,54 +27,45 @@ class ResumePDF:
         pdf.output(filename)
         return filename
 
-def build_prompt(data):
-    skills = data["skills"]
-    if isinstance(skills, str):
-        skills = [s.strip() for s in skills.split(",")]
 
+def build_prompt(data):
     return f"""
 You are a professional resume writer.
 
-Create a detailed resume using the following:
+Generate a clean, professional resume based on the following structured input:
 
 Name: {data['name']}
 Role: {data['role']}
-Experience: {data['experience']}
-Skills: {', '.join(skills)}
-Education: {data['education']}
-College Percentage: {data['college']}
-School Percentage: {data['school']}
-Competitive Programming: {data['competitiveProgramming']}
-Problem Solving: {data['problemSolving']}
+Contact: {data['contact']}
+Location: {data['location']}
 
-Format: 
-Name
-→ Summary  
-→ Skills (bullet points)  
-→ Experience  
-→ Education  
-→ College Percentage  
-→ School Percentage  
-→ Competitive Programming (bullet points)  
-→ Problem Solving Stats (bullet points)
+EDUCATION:
+{data['education']}
+College: {data['college']}
+School: {data['school']}
+
+SKILLS:
+Languages: {data['languages']}
+Tools: {data['tools']}
+Mathematics: {data['mathSkills']}
+Soft Skills: {data['softSkills']}
+
+COMPETITIVE PROGRAMMING:
+Ratings: {data['cpRanks']}
+Contests: {data['cpContests']}
+
+PROBLEM SOLVING:
+{data['problemStats']}
+
+PROJECTS:
+{data['projects']}
+
+POSITIONS OF RESPONSIBILITY:
+{data['por']}
+
+Use bullet points where relevant and maintain a professional tone.
 """
 
-def build_feedback_prompt(data):
-    return f"""
-You are a resume coach.
-
-Give 3 improvement suggestions for the following resume draft:
-
-Name: {data['name']}
-Role: {data['role']}
-Experience: {data['experience']}
-Skills: {data['skills']}
-Education: {data['education']}
-College Percentage: {data['college']}
-School Percentage: {data['school']}
-Competitive Programming: {data['competitiveProgramming']}
-Problem Solving: {data['problemSolving']}
-"""
 
 @app.route("/generate-resume", methods=["POST"])
 def generate_resume():
@@ -87,15 +79,24 @@ def generate_resume():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/get-suggestions", methods=["POST"])
-def get_suggestions():
+
+@app.route("/improve-section", methods=["POST"])
+def improve_section():
     try:
         data = request.get_json()
-        feedback_prompt = build_feedback_prompt(data)
-        response = model.generate_content(feedback_prompt)
-        return jsonify({"suggestion": getattr(response, "text", "No suggestions returned.")})
+        section = data["section"]
+        content = data["text"]
+        prompt = f"""You are a resume coach.
+Improve the following section of a resume titled "{section}":
+---
+{content}
+---
+Return a clean, improved version with professional phrasing, keeping it brief and impactful."""
+        response = model.generate_content(prompt)
+        return jsonify({"suggestion": getattr(response, "text", "No suggestion returned.")})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/download-resume", methods=["GET"])
 def download_resume():
@@ -104,6 +105,8 @@ def download_resume():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 if __name__ == "__main__":
     app.run(debug=True)
+
 
