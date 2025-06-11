@@ -7,6 +7,10 @@ function ResumeBuilder() {
     experience: "",
     skills: "",
     education: "",
+    college: "",
+    school: "",
+    competitiveProgramming: "",
+    problemSolving: "",
   });
   const [resumeText, setResumeText] = useState("");
   const [suggestion, setSuggestion] = useState("");
@@ -51,13 +55,31 @@ function ResumeBuilder() {
     <div style={{ maxWidth: 800, margin: "auto", padding: 20 }}>
       <h2>🧠 AI Resume Builder (LangChain + Gemini)</h2>
       <form onSubmit={handleSubmit}>
-        {["name", "role", "experience", "skills", "education"].map((field) => (
+        {[
+          "name",
+          "role",
+          "experience",
+          "skills",
+          "education",
+          "college",
+          "school",
+          "competitiveProgramming",
+          "problemSolving",
+        ].map((field) => (
           <div key={field} style={{ marginBottom: 10 }}>
             <label>{field.charAt(0).toUpperCase() + field.slice(1)}:</label><br />
             <textarea
               name={field}
               rows={3}
-              placeholder={field === "skills" ? "Comma separated" : ""}
+              placeholder={
+                field === "skills"
+                  ? "Comma separated"
+                  : field === "competitiveProgramming"
+                  ? "e.g., CF - Expert, LC - 2100"
+                  : field === "problemSolving"
+                  ? "e.g., LC: 500, CF: 300"
+                  : ""
+              }
               value={form[field]}
               onChange={handleChange}
               required
